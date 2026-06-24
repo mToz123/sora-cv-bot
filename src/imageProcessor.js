@@ -13,7 +13,7 @@ class ImageProcessor {
 
   async downloadAndProcess(url, userId) {
     const tempPath = path.join(this.tempDir, `photo_${userId}_${Date.now()}.jpg`);
-    const processedPath = path.join(this.tempDir, `processed_${userId}_${Date.now()}.jpg`);
+    const processedPath = path.join(this.tempDir, `processed_${userId}_${Date.now()}.png`);
 
     return new Promise((resolve, reject) => {
       const file = fs.createWriteStream(tempPath);
@@ -25,13 +25,28 @@ class ImageProcessor {
           file.close();
           
           try {
-            // Process image: resize, crop to square, optimize
+            // Create circular image with white border
+            const size = 300;
+            const borderWidth = 10;
+            
+            // Create SVG circle mask
+            const circleSvg = Buffer.from(
+              `<svg width="${size}" height="${size}">
+                <circle cx="${size/2}" cy="${size/2}" r="${size/2 - borderWidth}" fill="white"/>
+              </svg>`
+            );
+            
+            // Process image: resize, crop to square, apply circular mask
             await sharp(tempPath)
-              .resize(300, 300, {
+              .resize(size, size, {
                 fit: 'cover',
                 position: 'center'
               })
-              .jpeg({ quality: 85 })
+              .composite([{
+                input: circleSvg,
+                blend: 'dest-in'
+              }])
+              .png()
               .toFile(processedPath);
             
             // Delete temp file

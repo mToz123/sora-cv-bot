@@ -70,24 +70,23 @@ class PDFGenerator {
 
     let sideY = 20;
 
-    // Circular photo with better styling
+    // Circular photo (pre-processed by imageProcessor)
     if (data.photoPath && fs.existsSync(data.photoPath)) {
       try {
         const imgData = fs.readFileSync(data.photoPath);
-        const imgBase64 = `data:image/jpeg;base64,${imgData.toString('base64')}`;
-        // Photo (square, will look circular with border)
-        doc.addImage(imgBase64, 'JPEG', 22, sideY, 30, 30);
-        // White circle border simulation
-        doc.setDrawColor(255, 255, 255);
-        doc.setLineWidth(2);
-        doc.circle(37, sideY + 15, 16, 'S');
-        sideY += 40;
+        // Detect image type from file extension
+        const isPng = data.photoPath.toLowerCase().endsWith('.png');
+        const imgBase64 = `data:image/${isPng ? 'png' : 'jpeg'};base64,${imgData.toString('base64')}`;
+        // Render circular photo (already processed as circle with transparent bg)
+        doc.addImage(imgBase64, isPng ? 'PNG' : 'JPEG', 22, sideY, 30, 30);
+        sideY += 35;
       } catch (e) {
+        console.error('Photo render error:', e);
         // Photo placeholder circle
         doc.setDrawColor(255, 255, 255);
         doc.setLineWidth(2);
         doc.circle(37, sideY + 15, 15, 'S');
-        sideY += 40;
+        sideY += 35;
       }
     }
 
