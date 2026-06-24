@@ -143,8 +143,8 @@ class PDFGenerator {
         doc.text(skill, margin, sideY);
         sideY += 4;
 
-        // Progress bar background
-        doc.setFillColor(255, 255, 255, 0.3); // Light overlay
+        // Progress bar background (light gray/white)
+        doc.setFillColor(220, 220, 220);
         doc.roundedRect(margin, sideY, sidebarWidth - margin * 2, 3, 1.5, 1.5, 'F');
 
         // Progress bar fill (85% default)
@@ -224,7 +224,13 @@ class PDFGenerator {
       doc.setFontSize(12);
       doc.setFont('helvetica', 'bold');
       doc.text('EXPERIENCE', mainX, mainY);
-      mainY += 7;
+      mainY += 2;
+      
+      // Horizontal line below section title
+      doc.setDrawColor(...colors.primaryRGB);
+      doc.setLineWidth(0.5);
+      doc.line(mainX, mainY, mainX + mainWidth, mainY);
+      mainY += 6;
 
       doc.setFontSize(10);
       doc.setTextColor(30, 30, 30);
@@ -261,7 +267,13 @@ class PDFGenerator {
       doc.setFontSize(12);
       doc.setFont('helvetica', 'bold');
       doc.text('EDUCATION', mainX, mainY);
-      mainY += 7;
+      mainY += 2;
+      
+      // Horizontal line
+      doc.setDrawColor(...colors.primaryRGB);
+      doc.setLineWidth(0.5);
+      doc.line(mainX, mainY, mainX + mainWidth, mainY);
+      mainY += 6;
 
       doc.setFontSize(10);
       doc.setTextColor(30, 30, 30);
@@ -288,7 +300,13 @@ class PDFGenerator {
       doc.setFontSize(12);
       doc.setFont('helvetica', 'bold');
       doc.text('PROJECTS', mainX, mainY);
-      mainY += 7;
+      mainY += 2;
+      
+      // Horizontal line
+      doc.setDrawColor(...colors.primaryRGB);
+      doc.setLineWidth(0.5);
+      doc.line(mainX, mainY, mainX + mainWidth, mainY);
+      mainY += 6;
 
       doc.setFontSize(10);
       doc.setTextColor(30, 30, 30);
@@ -321,7 +339,13 @@ class PDFGenerator {
       doc.setFontSize(12);
       doc.setFont('helvetica', 'bold');
       doc.text('CERTIFICATIONS', mainX, mainY);
-      mainY += 7;
+      mainY += 2;
+      
+      // Horizontal line
+      doc.setDrawColor(...colors.primaryRGB);
+      doc.setLineWidth(0.5);
+      doc.line(mainX, mainY, mainX + mainWidth, mainY);
+      mainY += 6;
 
       doc.setFontSize(9);
       doc.setFont('helvetica', 'normal');
