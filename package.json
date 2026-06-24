@@ -7,15 +7,22 @@
     "start": "node src/index.js",
     "dev": "nodemon src/index.js"
   },
-  "keywords": ["telegram", "bot", "cv", "resume", "pdf", "html"],
+  "keywords": [
+    "telegram",
+    "bot",
+    "cv",
+    "resume",
+    "pdf",
+    "html"
+  ],
   "author": "Sora",
   "license": "MIT",
   "dependencies": {
-    "telegraf": "^4.16.3",
-    "html-pdf-node": "^1.0.8",
+    "dotenv": "^16.4.7",
+    "jspdf": "^4.2.1",
     "sharp": "^0.33.5",
     "sqlite3": "^5.1.7",
-    "dotenv": "^16.4.7"
+    "telegraf": "^4.16.3"
   },
   "engines": {
     "node": ">=18.0.0"

@@ -1,11 +1,10 @@
-const htmlPdf = require('html-pdf-node');
+const { jsPDF } = require('jspdf');
 const fs = require('fs');
 const path = require('path');
 
 class PDFGenerator {
   constructor() {
     this.outputDir = path.join(__dirname, '../output');
-    this.templatesDir = path.join(__dirname, '../templates');
     
     if (!fs.existsSync(this.outputDir)) {
       fs.mkdirSync(this.outputDir, { recursive: true });
@@ -37,55 +36,18 @@ class PDFGenerator {
       // Get template colors
       const colors = this.getTemplateColors(data.template);
       
-      // Load HTML template
-      const templatePath = path.join(this.templatesDir, 'base.html');
-      let html = fs.readFileSync(templatePath, 'utf8');
-      
-      // Replace colors
-      html = html.replace(/{{primaryColor}}/g, colors.primary);
-      html = html.replace(/{{secondaryColor}}/g, colors.secondary);
-      html = html.replace(/{{accentColor}}/g, colors.accent);
-      
-      // Prepare data for template
-      const templateData = {
-        name: data.name,
-        jobTitle: data.title,
-        email: data.email,
-        phone: data.phone,
-        location: data.location,
-        summary: data.summary,
-        photoPath: data.photoPath ? `file://${data.photoPath.replace(/\\/g, '/')}` : null,
-        skills: data.sections.skills.map(skill => ({
-          name: skill,
-          level: 85 // Default skill level
-        })),
-        languages: data.sections.languages || [],
-        experience: data.sections.experience || [],
-        education: data.sections.education || [],
-        projects: data.sections.projects || [],
-        certifications: data.sections.certifications || []
-      };
+      // Create PDF
+      const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
 
-      // Simple template replacement
-      html = this.replaceTemplate(html, templateData);
+      // Render template
+      this.renderModernTemplate(doc, data, colors);
 
-      // Generate PDF with html-pdf-node
-      const options = {
-        format: 'A4',
-        printBackground: true,
-        margin: { top: '0mm', right: '0mm', bottom: '0mm', left: '0mm' },
-        path: outputPath,
-        args: [
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage',
-          '--disable-gpu'
-        ]
-      };
-
-      const file = { content: html };
-      
-      await htmlPdf.generatePdf(file, options);
+      // Save PDF
+      doc.save(outputPath);
 
       return outputPath;
     } catch (error) {
@@ -94,166 +56,267 @@ class PDFGenerator {
     }
   }
 
-  replaceTemplate(html, data) {
-    // Replace simple variables
-    html = html.replace(/{{name}}/g, this.escapeHtml(data.name || ''));
-    html = html.replace(/{{jobTitle}}/g, this.escapeHtml(data.jobTitle || ''));
-    html = html.replace(/{{email}}/g, this.escapeHtml(data.email || ''));
-    html = html.replace(/{{phone}}/g, this.escapeHtml(data.phone || ''));
-    html = html.replace(/{{location}}/g, this.escapeHtml(data.location || ''));
-    html = html.replace(/{{summary}}/g, this.escapeHtml(data.summary || ''));
+  renderModernTemplate(doc, data, colors) {
+    const pageWidth = 210;
+    const pageHeight = 297;
+    const sidebarWidth = 70;
+    const margin = 10;
 
-    // Photo
-    if (data.photoPath) {
-      html = html.replace(/{{#if photoPath}}[\s\S]*?{{\/if}}/g, (match) => {
-        return match
-          .replace(/{{#if photoPath}}/g, '')
-          .replace(/{{\/if}}/g, '')
-          .replace(/{{photoPath}}/g, data.photoPath);
-      });
-    } else {
-      html = html.replace(/{{#if photoPath}}[\s\S]*?{{\/if}}/g, '');
+    // === SIDEBAR ===
+    // Sidebar background
+    doc.setFillColor(colors.primary);
+    doc.rect(0, 0, sidebarWidth, pageHeight, 'F');
+
+    let sideY = 15;
+
+    // Photo placeholder (circular simulation with square)
+    if (data.photoPath && fs.existsSync(data.photoPath)) {
+      try {
+        const imgData = fs.readFileSync(data.photoPath);
+        const imgBase64 = `data:image/jpeg;base64,${imgData.toString('base64')}`;
+        doc.addImage(imgBase64, 'JPEG', 15, sideY, 40, 40);
+        sideY += 45;
+      } catch (e) {
+        // Photo placeholder circle
+        doc.setDrawColor(255, 255, 255);
+        doc.setLineWidth(1);
+        doc.circle(35, sideY + 20, 20, 'S');
+        sideY += 45;
+      }
     }
 
-    // Skills
-    if (data.skills && data.skills.length > 0) {
-      let skillsHtml = '';
-      data.skills.forEach(skill => {
-        skillsHtml += `
-          <div class="skill-item">
-            <div class="skill-name">${this.escapeHtml(skill.name)}</div>
-            <div class="skill-bar">
-              <div class="skill-progress" style="width: ${skill.level}%"></div>
-            </div>
-          </div>
-        `;
+    // Contact Section
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('CONTACT', margin, sideY);
+    sideY += 8;
+
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    
+    // Email
+    doc.text('📧', margin, sideY);
+    doc.text(data.email, margin + 8, sideY, { maxWidth: sidebarWidth - 20 });
+    sideY += 10;
+
+    // Phone
+    doc.text('📱', margin, sideY);
+    doc.text(data.phone, margin + 8, sideY, { maxWidth: sidebarWidth - 20 });
+    sideY += 10;
+
+    // Location
+    doc.text('📍', margin, sideY);
+    doc.text(data.location, margin + 8, sideY, { maxWidth: sidebarWidth - 20 });
+    sideY += 15;
+
+    // Skills with progress bars
+    if (data.sections.skills && data.sections.skills.length > 0) {
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text('SKILLS', margin, sideY);
+      sideY += 8;
+
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+
+      data.sections.skills.slice(0, 8).forEach(skill => {
+        // Skill name
+        doc.text(skill, margin, sideY, { maxWidth: sidebarWidth - 20 });
+        sideY += 5;
+
+        // Progress bar background
+        doc.setFillColor(255, 255, 255, 0.2);
+        doc.rect(margin, sideY, sidebarWidth - 20, 3, 'F');
+
+        // Progress bar fill (85% default)
+        doc.setFillColor(colors.accent);
+        doc.rect(margin, sideY, (sidebarWidth - 20) * 0.85, 3, 'F');
+        
+        sideY += 7;
       });
-      html = html.replace(/{{#if skills}}[\s\S]*?{{\/if}}/g, (match) => {
-        return match
-          .replace(/{{#if skills}}/g, '')
-          .replace(/{{#each skills}}[\s\S]*?{{\/each}}/g, skillsHtml)
-          .replace(/{{\/if}}/g, '');
-      });
-    } else {
-      html = html.replace(/{{#if skills}}[\s\S]*?{{\/if}}/g, '');
+
+      sideY += 5;
     }
 
     // Languages
-    if (data.languages && data.languages.length > 0) {
-      let langsHtml = '';
-      data.languages.forEach(lang => {
-        langsHtml += `
-          <div class="language-item">
-            <div class="language-name">${this.escapeHtml(lang.name)}</div>
-            <div class="language-level">${this.escapeHtml(lang.level)}</div>
-          </div>
-        `;
+    if (data.sections.languages && data.sections.languages.length > 0) {
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text('LANGUAGES', margin, sideY);
+      sideY += 8;
+
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+
+      data.sections.languages.forEach(lang => {
+        doc.text(`• ${lang.name}`, margin, sideY, { maxWidth: sidebarWidth - 20 });
+        sideY += 4;
+        doc.setTextColor(220, 220, 220);
+        doc.setFontSize(8);
+        doc.text(lang.level, margin + 3, sideY, { maxWidth: sidebarWidth - 20 });
+        sideY += 7;
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(9);
       });
-      html = html.replace(/{{#if languages}}[\s\S]*?{{\/if}}/g, (match) => {
-        return match
-          .replace(/{{#if languages}}/g, '')
-          .replace(/{{#each languages}}[\s\S]*?{{\/each}}/g, langsHtml)
-          .replace(/{{\/if}}/g, '');
-      });
-    } else {
-      html = html.replace(/{{#if languages}}[\s\S]*?{{\/if}}/g, '');
+    }
+
+    // === MAIN CONTENT ===
+    let mainY = 15;
+    const mainX = sidebarWidth + margin;
+    const mainWidth = pageWidth - sidebarWidth - margin * 2;
+
+    // Name
+    doc.setTextColor(colors.primaryRGB);
+    doc.setFontSize(24);
+    doc.setFont('helvetica', 'bold');
+    doc.text(data.name, mainX, mainY, { maxWidth: mainWidth });
+    mainY += 10;
+
+    // Title
+    doc.setTextColor(colors.secondaryRGB);
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'normal');
+    doc.text(data.title, mainX, mainY, { maxWidth: mainWidth });
+    mainY += 12;
+
+    // Summary
+    if (data.summary) {
+      doc.setTextColor(60, 60, 60);
+      doc.setFontSize(10);
+      const summaryLines = doc.splitTextToSize(data.summary, mainWidth);
+      doc.text(summaryLines, mainX, mainY);
+      mainY += summaryLines.length * 5 + 8;
     }
 
     // Experience
-    if (data.experience && data.experience.length > 0) {
-      let expHtml = '';
-      data.experience.forEach(exp => {
-        expHtml += `
-          <div class="experience-item">
-            <div class="item-title">${this.escapeHtml(exp.title)}</div>
-            <div class="item-subtitle">${this.escapeHtml(exp.company)} | ${this.escapeHtml(exp.period)}</div>
-            ${exp.description ? `<div class="item-description">${this.escapeHtml(exp.description)}</div>` : ''}
-          </div>
-        `;
+    if (data.sections.experience && data.sections.experience.length > 0) {
+      doc.setTextColor(colors.primaryRGB);
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text('EXPERIENCE', mainX, mainY);
+      mainY += 7;
+
+      doc.setFontSize(10);
+      doc.setTextColor(30, 30, 30);
+
+      data.sections.experience.forEach(exp => {
+        doc.setFont('helvetica', 'bold');
+        doc.text(exp.title, mainX, mainY, { maxWidth: mainWidth });
+        mainY += 5;
+
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(colors.secondaryRGB);
+        doc.text(`${exp.company} | ${exp.period}`, mainX, mainY, { maxWidth: mainWidth });
+        mainY += 5;
+
+        if (exp.description) {
+          doc.setTextColor(80, 80, 80);
+          doc.setFontSize(9);
+          const descLines = doc.splitTextToSize(exp.description, mainWidth);
+          doc.text(descLines, mainX, mainY);
+          mainY += descLines.length * 4 + 5;
+        }
+
+        doc.setFontSize(10);
+        doc.setTextColor(30, 30, 30);
+        mainY += 3;
       });
-      html = html.replace(/{{#if experience}}[\s\S]*?{{\/if}}/g, `
-        <div class="content-section">
-          <div class="content-section-title">Experience</div>
-          ${expHtml}
-        </div>
-      `);
-    } else {
-      html = html.replace(/{{#if experience}}[\s\S]*?{{\/if}}/g, '');
+
+      mainY += 5;
     }
 
     // Education
-    if (data.education && data.education.length > 0) {
-      let eduHtml = '';
-      data.education.forEach(edu => {
-        eduHtml += `
-          <div class="education-item">
-            <div class="item-title">${this.escapeHtml(edu.degree)}</div>
-            <div class="item-subtitle">${this.escapeHtml(edu.institution)} | ${this.escapeHtml(edu.year)}</div>
-          </div>
-        `;
+    if (data.sections.education && data.sections.education.length > 0) {
+      doc.setTextColor(colors.primaryRGB);
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text('EDUCATION', mainX, mainY);
+      mainY += 7;
+
+      doc.setFontSize(10);
+      doc.setTextColor(30, 30, 30);
+
+      data.sections.education.forEach(edu => {
+        doc.setFont('helvetica', 'bold');
+        doc.text(edu.degree, mainX, mainY, { maxWidth: mainWidth });
+        mainY += 5;
+
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(colors.secondaryRGB);
+        doc.text(`${edu.institution} | ${edu.year}`, mainX, mainY, { maxWidth: mainWidth });
+        mainY += 8;
+
+        doc.setTextColor(30, 30, 30);
       });
-      html = html.replace(/{{#if education}}[\s\S]*?{{\/if}}/g, `
-        <div class="content-section">
-          <div class="content-section-title">Education</div>
-          ${eduHtml}
-        </div>
-      `);
-    } else {
-      html = html.replace(/{{#if education}}[\s\S]*?{{\/if}}/g, '');
+
+      mainY += 5;
     }
 
     // Projects
-    if (data.projects && data.projects.length > 0) {
-      let projHtml = '';
-      data.projects.forEach(proj => {
-        projHtml += `
-          <div class="project-item">
-            <div class="item-title">${this.escapeHtml(proj.name)}</div>
-            ${proj.description ? `<div class="item-description">${this.escapeHtml(proj.description)}</div>` : ''}
-          </div>
-        `;
+    if (data.sections.projects && data.sections.projects.length > 0) {
+      doc.setTextColor(colors.primaryRGB);
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text('PROJECTS', mainX, mainY);
+      mainY += 7;
+
+      doc.setFontSize(10);
+      doc.setTextColor(30, 30, 30);
+
+      data.sections.projects.forEach(proj => {
+        doc.setFont('helvetica', 'bold');
+        doc.text(proj.name, mainX, mainY, { maxWidth: mainWidth });
+        mainY += 5;
+
+        if (proj.description) {
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(80, 80, 80);
+          doc.setFontSize(9);
+          const projLines = doc.splitTextToSize(proj.description, mainWidth);
+          doc.text(projLines, mainX, mainY);
+          mainY += projLines.length * 4 + 5;
+        }
+
+        doc.setFontSize(10);
+        doc.setTextColor(30, 30, 30);
+        mainY += 3;
       });
-      html = html.replace(/{{#if projects}}[\s\S]*?{{\/if}}/g, `
-        <div class="content-section">
-          <div class="content-section-title">Projects</div>
-          ${projHtml}
-        </div>
-      `);
-    } else {
-      html = html.replace(/{{#if projects}}[\s\S]*?{{\/if}}/g, '');
+
+      mainY += 5;
     }
 
     // Certifications
-    if (data.certifications && data.certifications.length > 0) {
-      let certHtml = '';
-      data.certifications.forEach(cert => {
-        certHtml += `
-          <div class="certification-item">
-            ${this.escapeHtml(cert.name)} - ${this.escapeHtml(cert.issuer)} (${this.escapeHtml(cert.year)})
-          </div>
-        `;
+    if (data.sections.certifications && data.sections.certifications.length > 0) {
+      doc.setTextColor(colors.primaryRGB);
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text('CERTIFICATIONS', mainX, mainY);
+      mainY += 7;
+
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(30, 30, 30);
+
+      data.sections.certifications.forEach(cert => {
+        doc.text(`• ${cert.name} - ${cert.issuer} (${cert.year})`, mainX, mainY, { maxWidth: mainWidth });
+        mainY += 5;
       });
-      html = html.replace(/{{#if certifications}}[\s\S]*?{{\/if}}/g, `
-        <div class="content-section">
-          <div class="content-section-title">Certifications</div>
-          ${certHtml}
-        </div>
-      `);
-    } else {
-      html = html.replace(/{{#if certifications}}[\s\S]*?{{\/if}}/g, '');
     }
 
-    return html;
+    // Footer
+    doc.setTextColor(150, 150, 150);
+    doc.setFontSize(8);
+    doc.text('Generated by Sora CV Bot', pageWidth / 2, pageHeight - 10, { align: 'center' });
   }
 
-  escapeHtml(text) {
-    if (!text) return '';
-    return String(text)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;');
+  hexToRgb(hex) {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+      r: parseInt(result[1], 16),
+      g: parseInt(result[2], 16),
+      b: parseInt(result[3], 16)
+    } : { r: 0, g: 0, b: 0 };
   }
 
   getTemplateColors(template) {
@@ -279,7 +342,22 @@ class PDFGenerator {
       sunset: { primary: '#f97316', secondary: '#dc2626', accent: '#fb923c' },
       ocean: { primary: '#0e7490', secondary: '#155e75', accent: '#06b6d4' }
     };
-    return colorMap[template] || colorMap.azure;
+
+    const colors = colorMap[template] || colorMap.azure;
+    
+    // Convert hex to RGB for jsPDF
+    const primaryRgb = this.hexToRgb(colors.primary);
+    const secondaryRgb = this.hexToRgb(colors.secondary);
+    const accentRgb = this.hexToRgb(colors.accent);
+
+    return {
+      primary: colors.primary,
+      secondary: colors.secondary,
+      accent: colors.accent,
+      primaryRGB: [primaryRgb.r, primaryRgb.g, primaryRgb.b],
+      secondaryRGB: [secondaryRgb.r, secondaryRgb.g, secondaryRgb.b],
+      accentRGB: [accentRgb.r, accentRgb.g, accentRgb.b]
+    };
   }
 }
 
