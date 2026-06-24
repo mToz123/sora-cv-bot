@@ -64,7 +64,8 @@ class PDFGenerator {
 
     // === SIDEBAR ===
     // Sidebar background
-    doc.setFillColor(colors.primary);
+    const primaryRgb = this.hexToRgb(colors.primary);
+    doc.setFillColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
     doc.rect(0, 0, sidebarWidth, pageHeight, 'F');
 
     let sideY = 15;
@@ -125,12 +126,13 @@ class PDFGenerator {
         doc.text(skill, margin, sideY, { maxWidth: sidebarWidth - 20 });
         sideY += 5;
 
-        // Progress bar background
-        doc.setFillColor(255, 255, 255, 0.2);
+        // Progress bar background (light gray)
+        doc.setFillColor(200, 200, 200);
         doc.rect(margin, sideY, sidebarWidth - 20, 3, 'F');
 
         // Progress bar fill (85% default)
-        doc.setFillColor(colors.accent);
+        const accentRgb = this.hexToRgb(colors.accent);
+        doc.setFillColor(accentRgb.r, accentRgb.g, accentRgb.b);
         doc.rect(margin, sideY, (sidebarWidth - 20) * 0.85, 3, 'F');
         
         sideY += 7;
@@ -167,14 +169,14 @@ class PDFGenerator {
     const mainWidth = pageWidth - sidebarWidth - margin * 2;
 
     // Name
-    doc.setTextColor(colors.primaryRGB);
+    doc.setTextColor(...colors.primaryRGB);
     doc.setFontSize(24);
     doc.setFont('helvetica', 'bold');
     doc.text(data.name, mainX, mainY, { maxWidth: mainWidth });
     mainY += 10;
 
     // Title
-    doc.setTextColor(colors.secondaryRGB);
+    doc.setTextColor(...colors.secondaryRGB);
     doc.setFontSize(14);
     doc.setFont('helvetica', 'normal');
     doc.text(data.title, mainX, mainY, { maxWidth: mainWidth });
@@ -191,7 +193,7 @@ class PDFGenerator {
 
     // Experience
     if (data.sections.experience && data.sections.experience.length > 0) {
-      doc.setTextColor(colors.primaryRGB);
+      doc.setTextColor(...colors.primaryRGB);
       doc.setFontSize(12);
       doc.setFont('helvetica', 'bold');
       doc.text('EXPERIENCE', mainX, mainY);
@@ -206,7 +208,7 @@ class PDFGenerator {
         mainY += 5;
 
         doc.setFont('helvetica', 'normal');
-        doc.setTextColor(colors.secondaryRGB);
+        doc.setTextColor(...colors.secondaryRGB);
         doc.text(`${exp.company} | ${exp.period}`, mainX, mainY, { maxWidth: mainWidth });
         mainY += 5;
 
@@ -228,7 +230,7 @@ class PDFGenerator {
 
     // Education
     if (data.sections.education && data.sections.education.length > 0) {
-      doc.setTextColor(colors.primaryRGB);
+      doc.setTextColor(...colors.primaryRGB);
       doc.setFontSize(12);
       doc.setFont('helvetica', 'bold');
       doc.text('EDUCATION', mainX, mainY);
@@ -243,7 +245,7 @@ class PDFGenerator {
         mainY += 5;
 
         doc.setFont('helvetica', 'normal');
-        doc.setTextColor(colors.secondaryRGB);
+        doc.setTextColor(...colors.secondaryRGB);
         doc.text(`${edu.institution} | ${edu.year}`, mainX, mainY, { maxWidth: mainWidth });
         mainY += 8;
 
@@ -255,7 +257,7 @@ class PDFGenerator {
 
     // Projects
     if (data.sections.projects && data.sections.projects.length > 0) {
-      doc.setTextColor(colors.primaryRGB);
+      doc.setTextColor(...colors.primaryRGB);
       doc.setFontSize(12);
       doc.setFont('helvetica', 'bold');
       doc.text('PROJECTS', mainX, mainY);
@@ -288,7 +290,7 @@ class PDFGenerator {
 
     // Certifications
     if (data.sections.certifications && data.sections.certifications.length > 0) {
-      doc.setTextColor(colors.primaryRGB);
+      doc.setTextColor(...colors.primaryRGB);
       doc.setFontSize(12);
       doc.setFont('helvetica', 'bold');
       doc.text('CERTIFICATIONS', mainX, mainY);
