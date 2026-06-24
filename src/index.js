@@ -568,8 +568,15 @@ bot.action('generate_cv', async (ctx) => {
     setTimeout(() => clearTempFiles(session), 5000);
     
   } catch (error) {
-    console.error('Generate error:', error);
-    await ctx.reply('❌ Gagal membuat CV. Coba lagi!');
+    console.error('Generate CV error:', error);
+    console.error('Error stack:', error.stack);
+    console.error('Session data:', JSON.stringify(session.data));
+    await ctx.reply(
+      '❌ *Gagal membuat CV*\n\n' +
+      'Error: ' + (error.message || 'Unknown error') + '\n\n' +
+      'Coba lagi dengan /newcv atau hubungi support.',
+      { parse_mode: 'Markdown' }
+    );
   }
 });
 

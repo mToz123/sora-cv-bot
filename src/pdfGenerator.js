@@ -74,7 +74,13 @@ class PDFGenerator {
         format: 'A4',
         printBackground: true,
         margin: { top: '0mm', right: '0mm', bottom: '0mm', left: '0mm' },
-        path: outputPath
+        path: outputPath,
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-gpu'
+        ]
       };
 
       const file = { content: html };
