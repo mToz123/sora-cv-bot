@@ -1,0 +1,23 @@
+{
+  "name": "sora-cv-bot-v2",
+  "version": "2.0.0",
+  "description": "Premium Telegram CV Generator with HTML to PDF (20 modern templates)",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js"
+  },
+  "keywords": ["telegram", "bot", "cv", "resume", "pdf", "html"],
+  "author": "Sora",
+  "license": "MIT",
+  "dependencies": {
+    "telegraf": "^4.16.3",
+    "html-pdf-node": "^1.0.8",
+    "sharp": "^0.33.5",
+    "sqlite3": "^5.1.7",
+    "dotenv": "^16.4.7"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

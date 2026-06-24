@@ -1,0 +1,10 @@
+node_modules/
+.env
+*.log
+temp/
+output/
+data/*.db
+.DS_Store
+*.pdf
+*.jpg
+*.png

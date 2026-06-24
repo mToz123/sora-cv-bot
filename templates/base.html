@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CV - {{name}}</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Helvetica', 'Arial', sans-serif;
+      font-size: 10pt;
+      line-height: 1.6;
+      color: #1f2937;
+    }
+
+    .container {
+      display: flex;
+      width: 210mm;
+      min-height: 297mm;
+      background: white;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 35%;
+      background: {{primaryColor}};
+      color: white;
+      padding: 40px 30px;
+    }
+
+    .photo-container {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .photo {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      border: 4px solid white;
+      object-fit: cover;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .section-title {
+      font-size: 14pt;
+      font-weight: bold;
+      margin-top: 25px;
+      margin-bottom: 15px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .contact-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 12px;
+      font-size: 9pt;
+    }
+
+    .contact-icon {
+      margin-right: 8px;
+      font-size: 12pt;
+    }
+
+    /* Skills with progress bars */
+    .skill-item {
+      margin-bottom: 15px;
+    }
+
+    .skill-name {
+      font-size: 9pt;
+      margin-bottom: 5px;
+    }
+
+    .skill-bar {
+      width: 100%;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .skill-progress {
+      height: 100%;
+      background: {{accentColor}};
+      border-radius: 4px;
+    }
+
+    .language-item {
+      margin-bottom: 10px;
+      font-size: 9pt;
+    }
+
+    .language-name {
+      font-weight: bold;
+    }
+
+    .language-level {
+      opacity: 0.8;
+      font-size: 8pt;
+    }
+
+    /* Main Content */
+    .main-content {
+      width: 65%;
+      padding: 40px;
+    }
+
+    .header {
+      margin-bottom: 30px;
+    }
+
+    .name {
+      font-size: 28pt;
+      font-weight: bold;
+      color: {{primaryColor}};
+      margin-bottom: 5px;
+    }
+
+    .title {
+      font-size: 16pt;
+      color: {{secondaryColor}};
+      margin-bottom: 20px;
+    }
+
+    .summary {
+      font-size: 10pt;
+      text-align: justify;
+      line-height: 1.7;
+      color: #374151;
+    }
+
+    .content-section {
+      margin-top: 25px;
+    }
+
+    .content-section-title {
+      font-size: 14pt;
+      font-weight: bold;
+      color: {{primaryColor}};
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 15px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid {{primaryColor}};
+    }
+
+    .experience-item,
+    .education-item,
+    .project-item {
+      margin-bottom: 20px;
+    }
+
+    .item-title {
+      font-size: 11pt;
+      font-weight: bold;
+      color: #1f2937;
+      margin-bottom: 5px;
+    }
+
+    .item-subtitle {
+      font-size: 9pt;
+      color: {{secondaryColor}};
+      margin-bottom: 8px;
+    }
+
+    .item-description {
+      font-size: 9pt;
+      color: #4b5563;
+      line-height: 1.6;
+      text-align: justify;
+    }
+
+    .certification-item {
+      font-size: 9pt;
+      margin-bottom: 8px;
+      padding-left: 15px;
+      position: relative;
+    }
+
+    .certification-item:before {
+      content: "•";
+      position: absolute;
+      left: 0;
+      color: {{primaryColor}};
+      font-weight: bold;
+    }
+
+    .footer {
+      margin-top: auto;
+      padding-top: 20px;
+      text-align: center;
+      font-size: 8pt;
+      color: #9ca3af;
+    }
+
+    /* Print optimization */
+    @media print {
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      .container {
+        page-break-after: avoid;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      {{#if photoPath}}
+      <div class="photo-container">
+        <img src="{{photoPath}}" alt="Profile Photo" class="photo">
+      </div>
+      {{/if}}
+
+      <!-- Contact -->
+      <div class="section-title">Contact</div>
+      <div class="contact-item">
+        <span class="contact-icon">📧</span>
+        <span>{{email}}</span>
+      </div>
+      <div class="contact-item">
+        <span class="contact-icon">📱</span>
+        <span>{{phone}}</span>
+      </div>
+      <div class="contact-item">
+        <span class="contact-icon">📍</span>
+        <span>{{location}}</span>
+      </div>
+
+      <!-- Skills -->
+      {{#if skills}}
+      <div class="section-title">Skills</div>
+      {{#each skills}}
+      <div class="skill-item">
+        <div class="skill-name">{{this.name}}</div>
+        <div class="skill-bar">
+          <div class="skill-progress" style="width: {{this.level}}%"></div>
+        </div>
+      </div>
+      {{/each}}
+      {{/if}}
+
+      <!-- Languages -->
+      {{#if languages}}
+      <div class="section-title">Languages</div>
+      {{#each languages}}
+      <div class="language-item">
+        <div class="language-name">{{this.name}}</div>
+        <div class="language-level">{{this.level}}</div>
+      </div>
+      {{/each}}
+      {{/if}}
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <div class="header">
+        <div class="name">{{name}}</div>
+        <div class="title">{{jobTitle}}</div>
+        {{#if summary}}
+        <div class="summary">{{summary}}</div>
+        {{/if}}
+      </div>
+
+      <!-- Experience -->
+      {{#if experience}}
+      <div class="content-section">
+        <div class="content-section-title">Experience</div>
+        {{#each experience}}
+        <div class="experience-item">
+          <div class="item-title">{{this.title}}</div>
+          <div class="item-subtitle">{{this.company}} | {{this.period}}</div>
+          {{#if this.description}}
+          <div class="item-description">{{this.description}}</div>
+          {{/if}}
+        </div>
+        {{/each}}
+      </div>
+      {{/if}}
+
+      <!-- Education -->
+      {{#if education}}
+      <div class="content-section">
+        <div class="content-section-title">Education</div>
+        {{#each education}}
+        <div class="education-item">
+          <div class="item-title">{{this.degree}}</div>
+          <div class="item-subtitle">{{this.institution}} | {{this.year}}</div>
+        </div>
+        {{/each}}
+      </div>
+      {{/if}}
+
+      <!-- Projects -->
+      {{#if projects}}
+      <div class="content-section">
+        <div class="content-section-title">Projects</div>
+        {{#each projects}}
+        <div class="project-item">
+          <div class="item-title">{{this.name}}</div>
+          {{#if this.description}}
+          <div class="item-description">{{this.description}}</div>
+          {{/if}}
+        </div>
+        {{/each}}
+      </div>
+      {{/if}}
+
+      <!-- Certifications -->
+      {{#if certifications}}
+      <div class="content-section">
+        <div class="content-section-title">Certifications</div>
+        {{#each certifications}}
+        <div class="certification-item">
+          {{this.name}} - {{this.issuer}} ({{this.year}})
+        </div>
+        {{/each}}
+      </div>
+      {{/if}}
+
+      <div class="footer">
+        Generated by Sora CV Bot
+      </div>
+    </div>
+  </div>
+</body>
+</html>
