@@ -59,8 +59,8 @@ class PDFGenerator {
   renderModernTemplate(doc, data, colors) {
     const pageWidth = 210;
     const pageHeight = 297;
-    const sidebarWidth = 70;
-    const margin = 10;
+    const sidebarWidth = 75; // Wider sidebar (35%)
+    const margin = 12;
 
     // === SIDEBAR ===
     // Sidebar background
@@ -68,116 +68,143 @@ class PDFGenerator {
     doc.setFillColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
     doc.rect(0, 0, sidebarWidth, pageHeight, 'F');
 
-    let sideY = 15;
+    let sideY = 20;
 
-    // Photo placeholder (circular simulation with square)
+    // Circular photo with better styling
     if (data.photoPath && fs.existsSync(data.photoPath)) {
       try {
         const imgData = fs.readFileSync(data.photoPath);
         const imgBase64 = `data:image/jpeg;base64,${imgData.toString('base64')}`;
-        doc.addImage(imgBase64, 'JPEG', 15, sideY, 40, 40);
-        sideY += 45;
+        // Photo (square, will look circular with border)
+        doc.addImage(imgBase64, 'JPEG', 22, sideY, 30, 30);
+        // White circle border simulation
+        doc.setDrawColor(255, 255, 255);
+        doc.setLineWidth(2);
+        doc.circle(37, sideY + 15, 16, 'S');
+        sideY += 40;
       } catch (e) {
         // Photo placeholder circle
         doc.setDrawColor(255, 255, 255);
-        doc.setLineWidth(1);
-        doc.circle(35, sideY + 20, 20, 'S');
-        sideY += 45;
+        doc.setLineWidth(2);
+        doc.circle(37, sideY + 15, 15, 'S');
+        sideY += 40;
       }
     }
 
     // Contact Section
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(12);
+    doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
     doc.text('CONTACT', margin, sideY);
-    sideY += 8;
+    sideY += 7;
+    
+    // Divider line
+    doc.setDrawColor(255, 255, 255);
+    doc.setLineWidth(0.5);
+    doc.line(margin, sideY, sidebarWidth - margin, sideY);
+    sideY += 6;
 
-    doc.setFontSize(9);
+    doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
     
     // Email
     doc.text('📧', margin, sideY);
-    doc.text(data.email, margin + 8, sideY, { maxWidth: sidebarWidth - 20 });
-    sideY += 10;
+    const emailLines = doc.splitTextToSize(data.email, sidebarWidth - margin - 8);
+    doc.text(emailLines, margin + 6, sideY);
+    sideY += emailLines.length * 4 + 3;
 
     // Phone
     doc.text('📱', margin, sideY);
-    doc.text(data.phone, margin + 8, sideY, { maxWidth: sidebarWidth - 20 });
-    sideY += 10;
+    doc.text(data.phone, margin + 6, sideY);
+    sideY += 7;
 
     // Location
     doc.text('📍', margin, sideY);
-    doc.text(data.location, margin + 8, sideY, { maxWidth: sidebarWidth - 20 });
-    sideY += 15;
+    const locLines = doc.splitTextToSize(data.location, sidebarWidth - margin - 8);
+    doc.text(locLines, margin + 6, sideY);
+    sideY += locLines.length * 4 + 8;
 
-    // Skills with progress bars
+    // Skills with progress bars + percentage
     if (data.sections.skills && data.sections.skills.length > 0) {
-      doc.setFontSize(12);
+      doc.setFontSize(11);
       doc.setFont('helvetica', 'bold');
       doc.text('SKILLS', margin, sideY);
-      sideY += 8;
+      sideY += 7;
+      
+      // Divider line
+      doc.line(margin, sideY, sidebarWidth - margin, sideY);
+      sideY += 6;
 
-      doc.setFontSize(9);
+      doc.setFontSize(8);
       doc.setFont('helvetica', 'normal');
 
       data.sections.skills.slice(0, 8).forEach(skill => {
         // Skill name
-        doc.text(skill, margin, sideY, { maxWidth: sidebarWidth - 20 });
-        sideY += 5;
+        doc.text(skill, margin, sideY);
+        sideY += 4;
 
-        // Progress bar background (light gray)
-        doc.setFillColor(200, 200, 200);
-        doc.rect(margin, sideY, sidebarWidth - 20, 3, 'F');
+        // Progress bar background
+        doc.setFillColor(255, 255, 255, 0.3); // Light overlay
+        doc.roundedRect(margin, sideY, sidebarWidth - margin * 2, 3, 1.5, 1.5, 'F');
 
         // Progress bar fill (85% default)
         const accentRgb = this.hexToRgb(colors.accent);
         doc.setFillColor(accentRgb.r, accentRgb.g, accentRgb.b);
-        doc.rect(margin, sideY, (sidebarWidth - 20) * 0.85, 3, 'F');
+        doc.roundedRect(margin, sideY, (sidebarWidth - margin * 2) * 0.85, 3, 1.5, 1.5, 'F');
         
-        sideY += 7;
+        // Percentage text
+        doc.setFontSize(7);
+        doc.text('85%', sidebarWidth - margin - 8, sideY + 2.5);
+        doc.setFontSize(8);
+        
+        sideY += 6;
       });
 
-      sideY += 5;
+      sideY += 4;
     }
 
     // Languages
     if (data.sections.languages && data.sections.languages.length > 0) {
-      doc.setFontSize(12);
+      doc.setFontSize(11);
       doc.setFont('helvetica', 'bold');
       doc.text('LANGUAGES', margin, sideY);
-      sideY += 8;
+      sideY += 7;
+      
+      // Divider line
+      doc.setDrawColor(255, 255, 255);
+      doc.line(margin, sideY, sidebarWidth - margin, sideY);
+      sideY += 6;
 
-      doc.setFontSize(9);
+      doc.setFontSize(8);
       doc.setFont('helvetica', 'normal');
 
       data.sections.languages.forEach(lang => {
-        doc.text(`• ${lang.name}`, margin, sideY, { maxWidth: sidebarWidth - 20 });
+        doc.text(`• ${lang.name}`, margin, sideY);
         sideY += 4;
         doc.setTextColor(220, 220, 220);
-        doc.setFontSize(8);
-        doc.text(lang.level, margin + 3, sideY, { maxWidth: sidebarWidth - 20 });
-        sideY += 7;
+        doc.setFontSize(7);
+        doc.text(lang.level, margin + 4, sideY);
+        sideY += 6;
         doc.setTextColor(255, 255, 255);
-        doc.setFontSize(9);
+        doc.setFontSize(8);
       });
     }
 
     // === MAIN CONTENT ===
-    let mainY = 15;
+    let mainY = 20;
     const mainX = sidebarWidth + margin;
     const mainWidth = pageWidth - sidebarWidth - margin * 2;
 
     // Name
     doc.setTextColor(...colors.primaryRGB);
-    doc.setFontSize(24);
+    doc.setFontSize(26);
     doc.setFont('helvetica', 'bold');
     doc.text(data.name, mainX, mainY, { maxWidth: mainWidth });
-    mainY += 10;
+    mainY += 9;
 
     // Title
     doc.setTextColor(...colors.secondaryRGB);
-    doc.setFontSize(14);
+    doc.setFontSize(13);
     doc.setFont('helvetica', 'normal');
     doc.text(data.title, mainX, mainY, { maxWidth: mainWidth });
     mainY += 12;
