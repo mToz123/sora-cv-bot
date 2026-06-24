@@ -108,21 +108,21 @@ class PDFGenerator {
     doc.setFont('helvetica', 'normal');
     
     // Email
-    doc.text('📧', margin, sideY);
+    doc.text('Email', margin, sideY);
     const emailLines = doc.splitTextToSize(data.email, sidebarWidth - margin - 8);
-    doc.text(emailLines, margin + 6, sideY);
-    sideY += emailLines.length * 4 + 3;
+    doc.text(emailLines, margin, sideY + 3);
+    sideY += emailLines.length * 4 + 5;
 
     // Phone
-    doc.text('📱', margin, sideY);
-    doc.text(data.phone, margin + 6, sideY);
-    sideY += 7;
+    doc.text('Phone', margin, sideY);
+    doc.text(data.phone, margin, sideY + 3);
+    sideY += 8;
 
     // Location
-    doc.text('📍', margin, sideY);
+    doc.text('Location', margin, sideY);
     const locLines = doc.splitTextToSize(data.location, sidebarWidth - margin - 8);
-    doc.text(locLines, margin + 6, sideY);
-    sideY += locLines.length * 4 + 8;
+    doc.text(locLines, margin, sideY + 3);
+    sideY += locLines.length * 4 + 10;
 
     // Skills with progress bars + percentage
     if (data.sections.skills && data.sections.skills.length > 0) {
