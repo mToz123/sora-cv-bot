@@ -78,15 +78,19 @@ class PDFGenerator {
         const isPng = data.photoPath.toLowerCase().endsWith('.png');
         const imgBase64 = `data:image/${isPng ? 'png' : 'jpeg'};base64,${imgData.toString('base64')}`;
         // Render circular photo (already processed as circle with transparent bg)
-        doc.addImage(imgBase64, isPng ? 'PNG' : 'JPEG', 22, sideY, 30, 30);
-        sideY += 35;
+        // Increased size from 30x30 to 45x45 mm for better visibility
+        const photoSize = 45;
+        const photoX = (sidebarWidth - photoSize) / 2; // Center in sidebar
+        doc.addImage(imgBase64, isPng ? 'PNG' : 'JPEG', photoX, sideY, photoSize, photoSize);
+        sideY += photoSize + 10;
       } catch (e) {
         console.error('Photo render error:', e);
-        // Photo placeholder circle
+        // Photo placeholder circle (increased size)
+        const placeholderRadius = 22.5; // Half of 45mm
         doc.setDrawColor(255, 255, 255);
         doc.setLineWidth(2);
-        doc.circle(37, sideY + 15, 15, 'S');
-        sideY += 35;
+        doc.circle(sidebarWidth / 2, sideY + placeholderRadius, placeholderRadius, 'S');
+        sideY += 55;
       }
     }
 
