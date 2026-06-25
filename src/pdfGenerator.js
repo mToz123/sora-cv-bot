@@ -43,484 +43,377 @@ class PDFGenerator {
         format: 'a4'
       });
 
-      // Render new hybrid modern template
-      this.renderHybridModernTemplate(doc, data, colors);
+      // Render template
+      this.renderModernTemplate(doc, data, colors);
 
       // Save PDF
       doc.save(outputPath);
-      
-      console.log(`✅ PDF generated: ${outputPath}`);
+
       return outputPath;
     } catch (error) {
-      console.error('Error generating PDF:', error);
+      console.error('PDF generation error:', error);
       throw error;
     }
   }
 
-  getTemplateColors(template) {
-    const colorSchemes = {
-      azure: {
-        primary: [101, 67, 33],       // Dark Brown #654321 (header bg)
-        secondary: [139, 90, 43],     // Medium Brown #8b5a2b (section headers)
-        accent: [0, 0, 0],            // Black #000000 (titles, emphasis)
-        highlight: [205, 133, 63],    // Light Brown/Peru #cd853f (subtle accents)
-        background: [245, 245, 220],  // Beige #f5f5dc (soft background for sections)
-        text: [0, 0, 0],              // Black text
-        subtext: [64, 64, 64]         // Dark gray
-      },
-      emerald: {
-        primary: [101, 67, 33],
-        secondary: [139, 90, 43],
-        accent: [0, 0, 0],
-        highlight: [205, 133, 63],
-        background: [245, 245, 220],
-        text: [0, 0, 0],
-        subtext: [64, 64, 64]
-      },
-      ruby: {
-        primary: [101, 67, 33],
-        secondary: [139, 90, 43],
-        accent: [0, 0, 0],
-        highlight: [205, 133, 63],
-        background: [245, 245, 220],
-        text: [0, 0, 0],
-        subtext: [64, 64, 64]
-      },
-      violet: {
-        primary: [101, 67, 33],
-        secondary: [139, 90, 43],
-        accent: [0, 0, 0],
-        highlight: [205, 133, 63],
-        background: [245, 245, 220],
-        text: [0, 0, 0],
-        subtext: [64, 64, 64]
-      },
-      slate: {
-        primary: [101, 67, 33],
-        secondary: [139, 90, 43],
-        accent: [0, 0, 0],
-        highlight: [205, 133, 63],
-        background: [245, 245, 220],
-        text: [0, 0, 0],
-        subtext: [64, 64, 64]
-      }
-    };
+  renderModernTemplate(doc, data, colors) {
+    const pageWidth = 210;
+    const pageHeight = 297;
+    const sidebarWidth = 75; // Wider sidebar (35%)
+    const margin = 12;
 
-    return colorSchemes[template] || colorSchemes.azure;
-  }
+    // === SIDEBAR ===
+    // Sidebar background
+    const primaryRgb = this.hexToRgb(colors.primary);
+    doc.setFillColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
+    doc.rect(0, 0, sidebarWidth, pageHeight, 'F');
 
-  renderHybridModernTemplate(doc, data, colors) {
-    const pageWidth = 210;  // A4 width in mm
-    const pageHeight = 297; // A4 height in mm
-    const margin = 20;      // Generous margins (2026 trend)
-    const contentWidth = pageWidth - (margin * 2);
-    
-    let y = margin;
+    let sideY = 20;
 
-    // ========================================
-    // HEADER ACCENT BLOCK (Top 25%)
-    // ========================================
-    const headerHeight = 70;
-    
-    // Gradient background (primary → secondary)
-    this.drawGradientRect(doc, 0, 0, pageWidth, headerHeight, colors.primary, colors.secondary);
-    
-    // Decorative border at bottom of header (highlight color)
-    doc.setFillColor(...colors.highlight);
-    doc.rect(0, headerHeight - 3, pageWidth, 3, 'F');
-    
-    // Photo (BIGGER - 60mm)
-    const photoSize = 60;
-    const photoX = margin;
-    const photoY = margin - 5;
-    
+    // Circular photo (pre-processed by imageProcessor)
     if (data.photoPath && fs.existsSync(data.photoPath)) {
       try {
-        const photoData = fs.readFileSync(data.photoPath);
-        const base64 = photoData.toString('base64');
+        const imgData = fs.readFileSync(data.photoPath);
+        // Detect image type from file extension
         const isPng = data.photoPath.toLowerCase().endsWith('.png');
-        const imgBase64 = `data:image/${isPng ? 'png' : 'jpeg'};base64,${base64}`;
-        
-        // Render circular photo
-        doc.addImage(imgBase64, isPng ? 'PNG' : 'JPEG', photoX, photoY, photoSize, photoSize);
-      } catch (err) {
-        console.error('Error loading photo:', err);
-        // Draw placeholder circle
+        const imgBase64 = `data:image/${isPng ? 'png' : 'jpeg'};base64,${imgData.toString('base64')}`;
+        // Render circular photo (already processed as circle with transparent bg)
+        // Increased size from 30x30 to 45x45 mm for better visibility
+        const photoSize = 45;
+        const photoX = (sidebarWidth - photoSize) / 2; // Center in sidebar
+        doc.addImage(imgBase64, isPng ? 'PNG' : 'JPEG', photoX, sideY, photoSize, photoSize);
+        sideY += photoSize + 10;
+      } catch (e) {
+        console.error('Photo render error:', e);
+        // Photo placeholder circle (increased size)
+        const placeholderRadius = 22.5; // Half of 45mm
         doc.setDrawColor(255, 255, 255);
         doc.setLineWidth(2);
-        doc.circle(photoX + photoSize/2, photoY + photoSize/2, photoSize/2, 'S');
+        doc.circle(sidebarWidth / 2, sideY + placeholderRadius, placeholderRadius, 'S');
+        sideY += 55;
       }
     }
-    
-    // Name & Title (right of photo)
-    const textX = photoX + photoSize + 12;
-    const textY = photoY + 15;
-    
-    // Name in BLACK with white shadow effect (stand out on brown background)
-    doc.setFont('times', 'bold');
-    doc.setFontSize(32);
+
+    // Contact Section
     doc.setTextColor(255, 255, 255);
-    doc.text(data.name.toUpperCase(), textX + 0.5, textY + 0.5); // Shadow
-    doc.setTextColor(0, 0, 0);
-    doc.text(data.name.toUpperCase(), textX, textY);
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text('CONTACT', margin, sideY);
+    sideY += 7;
     
-    // Decorative line under name (highlight color)
-    const nameWidth = doc.getTextWidth(data.name.toUpperCase());
-    doc.setDrawColor(...colors.highlight);
-    doc.setLineWidth(1);
-    doc.line(textX, textY + 2, textX + nameWidth, textY + 2);
-    
-    // Title in white italic
-    doc.setFont('times', 'italic');
-    doc.setFontSize(14);
-    doc.setTextColor(255, 255, 255);
-    doc.text(data.title, textX, textY + 10);
-    
-    // Contact info box (beige background)
-    const contactBoxY = textY + 16;
-    const contactBoxHeight = 18;
-    doc.setFillColor(...colors.background);
-    doc.roundedRect(textX - 2, contactBoxY - 4, contentWidth - photoSize - 8, contactBoxHeight, 2, 2, 'F');
-    
-    // Contact details with icons (text format)
-    doc.setFont('times', 'bold');
-    doc.setFontSize(9);
-    doc.setTextColor(...colors.accent);
-    doc.text('EMAIL:', textX, contactBoxY);
-    doc.setFont('times', 'normal');
-    doc.setTextColor(...colors.text);
-    doc.text(data.email, textX + 14, contactBoxY);
-    
-    doc.setFont('times', 'bold');
-    doc.setTextColor(...colors.accent);
-    doc.text('PHONE:', textX, contactBoxY + 5);
-    doc.setFont('times', 'normal');
-    doc.setTextColor(...colors.text);
-    doc.text(data.phone, textX + 14, contactBoxY + 5);
-    
-    doc.setFont('times', 'bold');
-    doc.setTextColor(...colors.accent);
-    doc.text('LOCATION:', textX, contactBoxY + 10);
-    doc.setFont('times', 'normal');
-    doc.setTextColor(...colors.text);
-    doc.text(data.location, textX + 20, contactBoxY + 10);
-    
-    // Reset Y position after header
-    y = headerHeight + 15;
-
-    // ========================================
-    // PROFESSIONAL SUMMARY (with background box)
-    // ========================================
-    if (data.summary && data.summary.trim()) {
-      y = this.renderSectionWithBackground(doc, 'PROFESSIONAL SUMMARY', y, margin, contentWidth, colors, () => {
-        doc.setFont('times', 'normal');
-        doc.setFontSize(10);
-        doc.setTextColor(...colors.text);
-        
-        const lines = doc.splitTextToSize(data.summary, contentWidth - 10);
-        doc.text(lines, margin + 5, y + 8);
-        return lines.length * 5 + 10;
-      });
-      
-      y += 10;
-    }
-
-    // ========================================
-    // EXPERIENCE
-    // ========================================
-    if (data.sections.experience && data.sections.experience.length > 0) {
-      y = this.renderSectionWithBackground(doc, 'EXPERIENCE', y, margin, contentWidth, colors, () => {
-        let sectionY = y + 8;
-        
-        data.sections.experience.forEach((exp, idx) => {
-          // Check page break
-          if (sectionY > pageHeight - 40) {
-            doc.addPage();
-            sectionY = margin;
-          }
-          
-          // Decorative square bullet (highlight color)
-          doc.setFillColor(...colors.highlight);
-          doc.rect(margin + 5, sectionY - 3, 2, 2, 'F');
-          
-          // Job title (BLACK bold uppercase)
-          doc.setFont('times', 'bold');
-          doc.setFontSize(12);
-          doc.setTextColor(...colors.accent);
-          doc.text((exp.title || 'Position').toUpperCase(), margin + 10, sectionY);
-          sectionY += 6;
-          
-          // Company & period
-          doc.setFont('times', 'italic');
-          doc.setFontSize(10);
-          doc.setTextColor(...colors.subtext);
-          doc.text(exp.company || 'Company', margin + 5, sectionY);
-          doc.setFont('times', 'normal');
-          doc.text(` • ${exp.period || 'N/A'}`, margin + 5 + doc.getTextWidth(exp.company || 'Company'), sectionY);
-          sectionY += 6;
-          
-          // Description
-          if (exp.description) {
-            doc.setFont('times', 'normal');
-            doc.setFontSize(10);
-            doc.setTextColor(...colors.text);
-            
-            const descLines = doc.splitTextToSize(exp.description, contentWidth - 15);
-            descLines.forEach(line => {
-              // Bullet point
-              doc.setFillColor(...colors.accent);
-              doc.circle(margin + 7, sectionY - 1.5, 0.8, 'F');
-              
-              doc.text(line, margin + 12, sectionY);
-              sectionY += 5;
-            });
-          }
-          
-          sectionY += 5; // Gap between entries
-        });
-        
-        return sectionY - y;
-      });
-      
-      y += 10;
-    }
-
-    // ========================================
-    // EDUCATION
-    // ========================================
-    if (data.sections.education && data.sections.education.length > 0) {
-      y = this.renderSectionWithBackground(doc, 'EDUCATION', y, margin, contentWidth, colors, () => {
-        let sectionY = y + 8;
-        
-        data.sections.education.forEach((edu, idx) => {
-          if (sectionY > pageHeight - 40) {
-            doc.addPage();
-            sectionY = margin;
-          }
-          
-          // Decorative square bullet (highlight color)
-          doc.setFillColor(...colors.highlight);
-          doc.rect(margin + 5, sectionY - 3, 2, 2, 'F');
-          
-          // Degree (BLACK bold uppercase)
-          doc.setFont('times', 'bold');
-          doc.setFontSize(12);
-          doc.setTextColor(...colors.accent);
-          doc.text((edu.degree || 'Degree').toUpperCase(), margin + 10, sectionY);
-          sectionY += 6;
-          
-          // Institution & year
-          doc.setFont('times', 'italic');
-          doc.setFontSize(10);
-          doc.setTextColor(...colors.subtext);
-          doc.text(edu.institution || 'Institution', margin + 5, sectionY);
-          doc.setFont('times', 'normal');
-          doc.text(` • ${edu.year || 'N/A'}`, margin + 5 + doc.getTextWidth(edu.institution || 'Institution'), sectionY);
-          sectionY += 8;
-        });
-        
-        return sectionY - y;
-      });
-      
-      y += 10;
-    }
-
-    // ========================================
-    // SKILLS (Clean inline format, no bars)
-    // ========================================
-    if (data.sections.skills && data.sections.skills.length > 0) {
-      y = this.renderSectionWithBackground(doc, 'SKILLS', y, margin, contentWidth, colors, () => {
-        doc.setFont('times', 'bold');
-        doc.setFontSize(10);
-        doc.setTextColor(...colors.text);
-        
-        // Join skills with bullets
-        const skillsText = data.sections.skills.join('  •  ');
-        const lines = doc.splitTextToSize(skillsText, contentWidth - 10);
-        
-        doc.text(lines, margin + 5, y + 8);
-        return lines.length * 5 + 8;
-      });
-      
-      y += 10;
-    }
-
-    // ========================================
-    // PROJECTS
-    // ========================================
-    if (data.sections.projects && data.sections.projects.length > 0) {
-      y = this.renderSectionWithBackground(doc, 'PROJECTS', y, margin, contentWidth, colors, () => {
-        let sectionY = y + 8;
-        
-        data.sections.projects.forEach((proj, idx) => {
-          if (sectionY > pageHeight - 40) {
-            doc.addPage();
-            sectionY = margin;
-          }
-          
-          // Decorative square bullet (highlight color)
-          doc.setFillColor(...colors.highlight);
-          doc.rect(margin + 5, sectionY - 3, 2, 2, 'F');
-          
-          // Project name (BLACK bold uppercase)
-          doc.setFont('times', 'bold');
-          doc.setFontSize(12);
-          doc.setTextColor(...colors.accent);
-          doc.text((proj.name || 'Project').toUpperCase(), margin + 10, sectionY);
-          sectionY += 6;
-          
-          // Description
-          if (proj.description) {
-            doc.setFont('times', 'normal');
-            doc.setFontSize(10);
-            doc.setTextColor(...colors.text);
-            
-            const lines = doc.splitTextToSize(proj.description, contentWidth - 15);
-            lines.forEach(line => {
-              doc.setFillColor(...colors.accent);
-              doc.circle(margin + 7, sectionY - 1.5, 0.8, 'F');
-              doc.text(line, margin + 12, sectionY);
-              sectionY += 5;
-            });
-          }
-          
-          sectionY += 5;
-        });
-        
-        return sectionY - y;
-      });
-      
-      y += 10;
-    }
-
-    // ========================================
-    // LANGUAGES
-    // ========================================
-    if (data.sections.languages && data.sections.languages.length > 0) {
-      y = this.renderSectionWithBackground(doc, 'LANGUAGES', y, margin, contentWidth, colors, () => {
-        let sectionY = y + 8;
-        
-        data.sections.languages.forEach((lang, idx) => {
-          doc.setFont('times', 'bold');
-          doc.setFontSize(10);
-          doc.setTextColor(...colors.text);
-          doc.text(lang.name || 'Language', margin + 5, sectionY);
-          
-          doc.setFont('times', 'normal');
-          doc.text(` - ${lang.level || 'N/A'}`, margin + 5 + doc.getTextWidth(lang.name || 'Language'), sectionY);
-          sectionY += 6;
-        });
-        
-        return sectionY - y;
-      });
-      
-      y += 10;
-    }
-
-    // ========================================
-    // CERTIFICATIONS
-    // ========================================
-    if (data.sections.certifications && data.sections.certifications.length > 0) {
-      y = this.renderSectionWithBackground(doc, 'CERTIFICATIONS', y, margin, contentWidth, colors, () => {
-        let sectionY = y + 8;
-        
-        data.sections.certifications.forEach((cert, idx) => {
-          doc.setFont('times', 'bold');
-          doc.setFontSize(10);
-          doc.setTextColor(...colors.text);
-          doc.text(cert.name || 'Certification', margin + 5, sectionY);
-          
-          doc.setFont('times', 'normal');
-          const details = `${cert.issuer || 'Issuer'} (${cert.year || 'N/A'})`;
-          doc.text(` - ${details}`, margin + 5 + doc.getTextWidth(cert.name || 'Certification'), sectionY);
-          sectionY += 6;
-        });
-        
-        return sectionY - y;
-      });
-    }
-  }
-
-  renderSection(doc, title, y, margin, contentWidth, colors, contentRenderer) {
-    const pageHeight = 297;
-    
-    // Check page break
-    if (y > pageHeight - 50) {
-      doc.addPage();
-      y = 20;
-    }
-    
-    // Section header (secondary color)
-    doc.setFont('times', 'bold');
-    doc.setFontSize(14);
-    doc.setTextColor(...colors.secondary);
-    doc.text(title.toUpperCase(), margin, y);
-    
-    // Underline (accent color)
-    doc.setDrawColor(...colors.accent);
+    // Divider line
+    doc.setDrawColor(255, 255, 255);
     doc.setLineWidth(0.5);
-    doc.line(margin, y + 2, margin + contentWidth, y + 2);
-    
-    // Render content
-    const contentHeight = contentRenderer();
-    
-    return y + contentHeight;
-  }
+    doc.line(margin, sideY, sidebarWidth - margin, sideY);
+    sideY += 6;
 
-  renderSectionWithBackground(doc, title, y, margin, contentWidth, colors, contentRenderer) {
-    const pageHeight = 297;
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
     
-    // Check page break
-    if (y > pageHeight - 50) {
-      doc.addPage();
-      y = 20;
-    }
-    
-    // Beige background box for section
-    doc.setFillColor(...colors.background);
-    doc.roundedRect(margin - 2, y - 3, contentWidth + 4, 10, 1, 1, 'F');
-    
-    // Section header (secondary color with highlight)
-    doc.setFont('times', 'bold');
-    doc.setFontSize(14);
-    doc.setTextColor(...colors.secondary);
-    doc.text(title.toUpperCase(), margin + 2, y + 4);
-    
-    // Decorative corner accent (highlight color)
-    doc.setFillColor(...colors.highlight);
-    doc.triangle(margin - 2, y - 3, margin + 5, y - 3, margin - 2, y + 4, 'F');
-    
-    // Underline (dual color: secondary + highlight)
-    doc.setDrawColor(...colors.secondary);
-    doc.setLineWidth(1);
-    doc.line(margin, y + 6, margin + contentWidth, y + 6);
-    
-    doc.setDrawColor(...colors.highlight);
-    doc.setLineWidth(0.3);
-    doc.line(margin, y + 7, margin + contentWidth, y + 7);
-    
-    y += 10;
-    
-    // Render content
-    const contentHeight = contentRenderer();
-    
-    return y + contentHeight;
-  }
+    // Email
+    doc.text('Email', margin, sideY);
+    const emailLines = doc.splitTextToSize(data.email, sidebarWidth - margin - 8);
+    doc.text(emailLines, margin, sideY + 3);
+    sideY += emailLines.length * 4 + 5;
 
-  drawGradientRect(doc, x, y, width, height, color1, color2) {
-    // Simulate gradient with horizontal strips
-    const steps = 20;
-    const stripHeight = height / steps;
-    
-    for (let i = 0; i < steps; i++) {
-      const ratio = i / steps;
-      const r = Math.round(color1[0] + (color2[0] - color1[0]) * ratio);
-      const g = Math.round(color1[1] + (color2[1] - color1[1]) * ratio);
-      const b = Math.round(color1[2] + (color2[2] - color1[2]) * ratio);
+    // Phone
+    doc.text('Phone', margin, sideY);
+    doc.text(data.phone, margin, sideY + 3);
+    sideY += 8;
+
+    // Location
+    doc.text('Location', margin, sideY);
+    const locLines = doc.splitTextToSize(data.location, sidebarWidth - margin - 8);
+    doc.text(locLines, margin, sideY + 3);
+    sideY += locLines.length * 4 + 10;
+
+    // Skills with progress bars + percentage
+    if (data.sections.skills && data.sections.skills.length > 0) {
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.text('SKILLS', margin, sideY);
+      sideY += 7;
       
-      doc.setFillColor(r, g, b);
-      doc.rect(x, y + (i * stripHeight), width, stripHeight, 'F');
+      // Divider line
+      doc.line(margin, sideY, sidebarWidth - margin, sideY);
+      sideY += 6;
+
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+
+      data.sections.skills.slice(0, 8).forEach(skill => {
+        // Skill name
+        doc.text(skill, margin, sideY);
+        sideY += 4;
+
+        // Progress bar background (light gray/white)
+        doc.setFillColor(220, 220, 220);
+        doc.roundedRect(margin, sideY, sidebarWidth - margin * 2, 3, 1.5, 1.5, 'F');
+
+        // Progress bar fill (85% default)
+        const accentRgb = this.hexToRgb(colors.accent);
+        doc.setFillColor(accentRgb.r, accentRgb.g, accentRgb.b);
+        doc.roundedRect(margin, sideY, (sidebarWidth - margin * 2) * 0.85, 3, 1.5, 1.5, 'F');
+        
+        // Percentage text
+        doc.setFontSize(7);
+        doc.text('85%', sidebarWidth - margin - 8, sideY + 2.5);
+        doc.setFontSize(8);
+        
+        sideY += 6;
+      });
+
+      sideY += 4;
     }
+
+    // Languages
+    if (data.sections.languages && data.sections.languages.length > 0) {
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.text('LANGUAGES', margin, sideY);
+      sideY += 7;
+      
+      // Divider line
+      doc.setDrawColor(255, 255, 255);
+      doc.line(margin, sideY, sidebarWidth - margin, sideY);
+      sideY += 6;
+
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+
+      data.sections.languages.forEach(lang => {
+        doc.text(`• ${lang.name}`, margin, sideY);
+        sideY += 4;
+        doc.setTextColor(220, 220, 220);
+        doc.setFontSize(7);
+        doc.text(lang.level, margin + 4, sideY);
+        sideY += 6;
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(8);
+      });
+    }
+
+    // === MAIN CONTENT ===
+    let mainY = 20;
+    const mainX = sidebarWidth + margin;
+    const mainWidth = pageWidth - sidebarWidth - margin * 2;
+
+    // Name
+    doc.setTextColor(...colors.primaryRGB);
+    doc.setFontSize(26);
+    doc.setFont('helvetica', 'bold');
+    doc.text(data.name, mainX, mainY, { maxWidth: mainWidth });
+    mainY += 9;
+
+    // Title
+    doc.setTextColor(...colors.secondaryRGB);
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'normal');
+    doc.text(data.title, mainX, mainY, { maxWidth: mainWidth });
+    mainY += 12;
+
+    // Summary
+    if (data.summary) {
+      doc.setTextColor(60, 60, 60);
+      doc.setFontSize(10);
+      const summaryLines = doc.splitTextToSize(data.summary, mainWidth);
+      doc.text(summaryLines, mainX, mainY);
+      mainY += summaryLines.length * 5 + 8;
+    }
+
+    // Experience
+    if (data.sections.experience && data.sections.experience.length > 0) {
+      doc.setTextColor(...colors.primaryRGB);
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text('EXPERIENCE', mainX, mainY);
+      mainY += 2;
+      
+      // Horizontal line below section title
+      doc.setDrawColor(...colors.primaryRGB);
+      doc.setLineWidth(0.5);
+      doc.line(mainX, mainY, mainX + mainWidth, mainY);
+      mainY += 6;
+
+      doc.setFontSize(10);
+      doc.setTextColor(30, 30, 30);
+
+      data.sections.experience.forEach(exp => {
+        doc.setFont('helvetica', 'bold');
+        doc.text(exp.title, mainX, mainY, { maxWidth: mainWidth });
+        mainY += 5;
+
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(...colors.secondaryRGB);
+        doc.text(`${exp.company} | ${exp.period}`, mainX, mainY, { maxWidth: mainWidth });
+        mainY += 5;
+
+        if (exp.description) {
+          doc.setTextColor(80, 80, 80);
+          doc.setFontSize(9);
+          const descLines = doc.splitTextToSize(exp.description, mainWidth);
+          doc.text(descLines, mainX, mainY);
+          mainY += descLines.length * 4 + 5;
+        }
+
+        doc.setFontSize(10);
+        doc.setTextColor(30, 30, 30);
+        mainY += 3;
+      });
+
+      mainY += 5;
+    }
+
+    // Education
+    if (data.sections.education && data.sections.education.length > 0) {
+      doc.setTextColor(...colors.primaryRGB);
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text('EDUCATION', mainX, mainY);
+      mainY += 2;
+      
+      // Horizontal line
+      doc.setDrawColor(...colors.primaryRGB);
+      doc.setLineWidth(0.5);
+      doc.line(mainX, mainY, mainX + mainWidth, mainY);
+      mainY += 6;
+
+      doc.setFontSize(10);
+      doc.setTextColor(30, 30, 30);
+
+      data.sections.education.forEach(edu => {
+        doc.setFont('helvetica', 'bold');
+        doc.text(edu.degree, mainX, mainY, { maxWidth: mainWidth });
+        mainY += 5;
+
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(...colors.secondaryRGB);
+        doc.text(`${edu.institution} | ${edu.year}`, mainX, mainY, { maxWidth: mainWidth });
+        mainY += 8;
+
+        doc.setTextColor(30, 30, 30);
+      });
+
+      mainY += 5;
+    }
+
+    // Projects
+    if (data.sections.projects && data.sections.projects.length > 0) {
+      doc.setTextColor(...colors.primaryRGB);
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text('PROJECTS', mainX, mainY);
+      mainY += 2;
+      
+      // Horizontal line
+      doc.setDrawColor(...colors.primaryRGB);
+      doc.setLineWidth(0.5);
+      doc.line(mainX, mainY, mainX + mainWidth, mainY);
+      mainY += 6;
+
+      doc.setFontSize(10);
+      doc.setTextColor(30, 30, 30);
+
+      data.sections.projects.forEach(proj => {
+        doc.setFont('helvetica', 'bold');
+        doc.text(proj.name, mainX, mainY, { maxWidth: mainWidth });
+        mainY += 5;
+
+        if (proj.description) {
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(80, 80, 80);
+          doc.setFontSize(9);
+          const projLines = doc.splitTextToSize(proj.description, mainWidth);
+          doc.text(projLines, mainX, mainY);
+          mainY += projLines.length * 4 + 5;
+        }
+
+        doc.setFontSize(10);
+        doc.setTextColor(30, 30, 30);
+        mainY += 3;
+      });
+
+      mainY += 5;
+    }
+
+    // Certifications
+    if (data.sections.certifications && data.sections.certifications.length > 0) {
+      doc.setTextColor(...colors.primaryRGB);
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text('CERTIFICATIONS', mainX, mainY);
+      mainY += 2;
+      
+      // Horizontal line
+      doc.setDrawColor(...colors.primaryRGB);
+      doc.setLineWidth(0.5);
+      doc.line(mainX, mainY, mainX + mainWidth, mainY);
+      mainY += 6;
+
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(30, 30, 30);
+
+      data.sections.certifications.forEach(cert => {
+        doc.text(`• ${cert.name} - ${cert.issuer} (${cert.year})`, mainX, mainY, { maxWidth: mainWidth });
+        mainY += 5;
+      });
+    }
+
+    // Footer
+    doc.setTextColor(150, 150, 150);
+    doc.setFontSize(8);
+    doc.text('Generated by Sora CV Bot', pageWidth / 2, pageHeight - 10, { align: 'center' });
+  }
+
+  hexToRgb(hex) {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+      r: parseInt(result[1], 16),
+      g: parseInt(result[2], 16),
+      b: parseInt(result[3], 16)
+    } : { r: 0, g: 0, b: 0 };
+  }
+
+  getTemplateColors(template) {
+    const colorMap = {
+      azure: { primary: '#3b82f6', secondary: '#2563eb', accent: '#60a5fa' },
+      emerald: { primary: '#10b981', secondary: '#059669', accent: '#34d399' },
+      ruby: { primary: '#ef4444', secondary: '#dc2626', accent: '#f87171' },
+      violet: { primary: '#8b5cf6', secondary: '#7c3aed', accent: '#a78bfa' },
+      coral: { primary: '#f97316', secondary: '#ea580c', accent: '#fb923c' },
+      slate: { primary: '#64748b', secondary: '#475569', accent: '#94a3b8' },
+      amber: { primary: '#f59e0b', secondary: '#d97706', accent: '#fbbf24' },
+      teal: { primary: '#14b8a6', secondary: '#0d9488', accent: '#2dd4bf' },
+      crimson: { primary: '#be123c', secondary: '#9f1239', accent: '#e11d48' },
+      navy: { primary: '#1e40af', secondary: '#1e3a8a', accent: '#3b82f6' },
+      forest: { primary: '#16a34a', secondary: '#15803d', accent: '#22c55e' },
+      plum: { primary: '#a21caf', secondary: '#86198f', accent: '#c026d3' },
+      sky: { primary: '#0ea5e9', secondary: '#0284c7', accent: '#38bdf8' },
+      charcoal: { primary: '#374151', secondary: '#1f2937', accent: '#6b7280' },
+      rose: { primary: '#f43f5e', secondary: '#e11d48', accent: '#fb7185' },
+      indigo: { primary: '#6366f1', secondary: '#4f46e5', accent: '#818cf8' },
+      bronze: { primary: '#92400e', secondary: '#78350f', accent: '#b45309' },
+      mint: { primary: '#06b6d4', secondary: '#0891b2', accent: '#22d3ee' },
+      sunset: { primary: '#f97316', secondary: '#dc2626', accent: '#fb923c' },
+      ocean: { primary: '#0e7490', secondary: '#155e75', accent: '#06b6d4' }
+    };
+
+    const colors = colorMap[template] || colorMap.azure;
+    
+    // Convert hex to RGB for jsPDF
+    const primaryRgb = this.hexToRgb(colors.primary);
+    const secondaryRgb = this.hexToRgb(colors.secondary);
+    const accentRgb = this.hexToRgb(colors.accent);
+
+    return {
+      primary: colors.primary,
+      secondary: colors.secondary,
+      accent: colors.accent,
+      primaryRGB: [primaryRgb.r, primaryRgb.g, primaryRgb.b],
+      secondaryRGB: [secondaryRgb.r, secondaryRgb.g, secondaryRgb.b],
+      accentRGB: [accentRgb.r, accentRgb.g, accentRgb.b]
+    };
   }
 }
 
