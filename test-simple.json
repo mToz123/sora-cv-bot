@@ -1,0 +1,32 @@
+﻿{
+  "name": "Anton Kariskau",
+  "title": "Pengembang Full Stack",
+  "email": "anton@example.com",
+  "phone": "+62 812-3456-7890",
+  "location": "Jakarta",
+  "summary": "Pengembang berpengalaman dalam membangun aplikasi web modern dan integrasi AI.",
+  "template": "profesional",
+  "photoPath": "C:\\Users\\xraym\\.openclaw\\workspace\\sora-cv-bot\\temp\\processed_test-photo_1782354453668.png",
+  "sections": {
+    "skills": ["JavaScript", "React", "Node.js", "Python", "AWS"],
+    "languages": [
+      {"name": "Bahasa Indonesia", "level": "Penutur Asli"},
+      {"name": "Bahasa Inggris", "level": "Profesional"}
+    ],
+    "experience": [
+      {
+        "title": "Pengembang Senior",
+        "company": "Tech Indonesia",
+        "period": "2022 - Sekarang",
+        "description": "Memimpin pengembangan aplikasi web menggunakan React dan Node.js."
+      }
+    ],
+    "education": [
+      {"degree": "Sarjana Ilmu Komputer", "institution": "Universitas Indonesia", "year": "2015-2019"}
+    ],
+    "projects": [
+      {"name": "AI Chat Bot", "description": "Bot berbasis AI dengan NLP."}
+    ],
+    "certifications": []
+  }
+}
